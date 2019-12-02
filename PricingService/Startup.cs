@@ -1,21 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using GlobalExceptionHandler.WebApi;
 using MediatR;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Hosting;
 using PricingService.Configuration;
 using PricingService.DataAccess.Marten;
-using PricingService.Init;
-using GlobalExceptionHandler.WebApi;
 using PricingService.Infrastructure;
+using PricingService.Init;
 using Steeltoe.Discovery.Client;
 
 namespace PricingService
@@ -34,8 +28,8 @@ namespace PricingService
         {
             services.AddDiscoveryClient(Configuration);
             services.AddMvc()
-                .SetCompatibilityVersion(CompatibilityVersion.Version_2_1)
-                .AddJsonOptions(opt => 
+                .SetCompatibilityVersion(CompatibilityVersion.Version_3_0)
+                .AddNewtonsoftJson(opt => 
                 {
                     opt.SerializerSettings.TypeNameHandling = Newtonsoft.Json.TypeNameHandling.Auto;
                 });
@@ -43,12 +37,13 @@ namespace PricingService
             services.AddMarten(Configuration.GetConnectionString("DefaultConnection"));
             services.AddPricingDemoInitializer();
             services.AddMediatR();
-            services.AddLogingBehaviour();
+            services.AddLoggingBehavior();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
+            app.UseRouting();
             app.UseGlobalExceptionHandler(cfg => cfg.MapExceptions());
             if (!env.IsDevelopment())
             {
@@ -56,9 +51,9 @@ namespace PricingService
             }
 
             app.UseHttpsRedirection();
-            app.UseMvc();
             app.UseInitializer();
             app.UseDiscoveryClient();
+            app.UseEndpoints(endpoints => endpoints.MapControllers());
         }
     }
 }

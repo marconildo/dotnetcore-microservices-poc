@@ -4,7 +4,7 @@
 
 This is an example of a very simplified insurance sales system made in a microservice architecture using:
 
-* .NET Core 2.1
+* .NET Core 3.0
 * Entity Framework Core
 * MediatR
 * Marten
@@ -22,12 +22,18 @@ This is an example of a very simplified insurance sales system made in a microse
 
 **Comprehensive guide describing exactly the architecture, applied design patterns and technologies can be found on our blog:**
 
-- [Part I The Plan](https://altkomsoftware.pl/en/blog/building-microservices-on-net-core-1/)
+- [Part 1 The Plan](https://altkomsoftware.pl/en/blog/building-microservices-on-net-core-1/)
 - [Part 2 Shaping microservice internal architecture with CQRS and MediatR](https://altkomsoftware.pl/en/blog/microservices-net-core-cqrs-mediatr/)
 - [Part 3 Service Discovery with Eureka](https://altkomsoftware.pl/en/blog/service-discovery-eureka/)
 - [Part 4 Building API Gateways With Ocelot](https://altkomsoftware.pl/en/blog/building-api-gateways-with-ocelot/)
 - [Part 5 Marten An Ideal Repository For Your Domain Aggregates](https://altkomsoftware.pl/en/blog/building-microservices-domain-aggregates/)
+- [Part 6 Real time server client communication with SignalR and RabbitMQ](https://altkomsoftware.pl/en/blog/building-microservices-6/)
+- [Part 7 Transactional Outbox with RabbitMQ](https://altkomsoftware.pl/en/blog/microservices-outbox-rabbitmq/)
 
+Other articles around microservices that could be interesting:
+- [CQRS and Event Sourcing Intro For Developers](https://altkomsoftware.pl/en/blog/cqrs-event-sourcing/)
+- [From monolith to microservices – to migrate or not to migrate?](https://altkomsoftware.pl/en/blog/monolith-microservices/)
+- [Event Storming — innovation in IT projects](https://altkomsoftware.pl/en/blog/event-storming/)
 
 ## Business Case
 
@@ -60,7 +66,7 @@ In this service we demonstrated usage of CQRS pattern for better read/write oper
 * **Policy Search Service** - provides insurance policy search. \
 This module listens for events from RabbitMQ, converts received DTOs to “read model” and indexes given model in ElasticSearch to provide advanced search capabilities.
 
-* **Pricing Service** - a service responsible for calculation of price for given insurance product based on its parametrization.. \
+* **Pricing Service** - a service responsible for calculation of price for given insurance product based on its parametrization. \
 For each product a tariff should be defined. The tariff is a set of rules on the basis of which the price is calculated. DynamicExpresso was used to parse the rules. During the policy purchase process, the `PolicyService` connects with this service to calculate a price. Price is calculated based on user’s answers for defined questions.
 
 * **Product Service** - simple insurance product catalog. \
@@ -70,7 +76,13 @@ It provides basic information about each insurance product and its parameters th
 
 Each business microservice has also **.Api project** (`PaymentService.Api`, `PolicyService.Api` etc.), where we defined commands, events, queries and operations and **.Test project** (`PaymentService.Test`, `PolicyService.Test`) with unit and integration tests.
 
-## Prerequisites
+## Running with Docker
+
+Check branch [docker-compose](https://github.com/asc-lab/dotnetcore-microservices-poc/tree/docker-compose). On this branch you can find version that you can run with one command using Docker and Docker Compose.
+
+## Manual running
+
+### Prerequisites
 
 Install [PostgreSQL](https://www.postgresql.org/) version >= 10.0.
 
@@ -78,9 +90,11 @@ Install [RabbitMQ](https://www.rabbitmq.com/).
 
 Install [Elasticsearch](https://www.elastic.co/guide/en/elasticsearch/reference/current/install-elasticsearch.html) version >= 6.
 
-Install [Maven](https://maven.apache.org/download.cgi) in order to run Eureka.
+Install [Maven](https://maven.apache.org/download.cgi) in order to run Eureka or use Maven wrapper.
 
-## Init databases
+### Init databases
+
+#### Windows
 
 ```bash
 cd DbScripts
@@ -94,9 +108,16 @@ cd DbScripts
 "C:\Program Files\PostgreSQL\9.6\bin\psql.exe" --host "localhost" --port 5432 --username "postgres" --file "createdatabases.sql"
 ```
 
+#### Linux
+
+```bash
+sudo -i -u postgres
+psql --host "localhost" --port 5432 --username "postgres" --file "PATH_TO_FILE/createdatabases.sql"
+```
+
 This script should create `lab_user` user and the following databases: `lab_netmicro_payments`, `lab_netmicro_jobs`, `lab_netmicro_policy` and `lab_netmicro_pricing`.
 
-## Run Eureka
+### Run Eureka
 
 Service registry and discovery tool for our project is Eureka. It is included in the project.
 In order to start it open terminal / command prompt.
@@ -108,16 +129,39 @@ mvn spring-boot:run
 
 This should start Eureka and you should be able to go to http://localhost:8761/ and see Eureka management panel.
 
-## Build
+### Build
 
 Build all projects from command line without test:
 
+#### Windows
+
 ```bash
+cd scripts
 build-without-tests.bat
+```
+
+#### Linux
+```bash
+cd scripts
+./build-without-tests.sh
 ```
 
 Build all projects from command with test:
 
+#### Windows
+
 ```bash
+cd scripts
 build.bat
 ```
+
+#### Linux
+
+```bash
+cd scripts
+./build.sh
+```
+
+## Run
+
+Go to folder with specific service (`PolicyService`, `ProductService` etc) and use `dotnet run` command.
